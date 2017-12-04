@@ -1,9 +1,6 @@
 
 const Koa = require('koa')
 const app = new Koa()
-const bodyParser = require('koa-bodyparser')
-
-app.use(bodyParser())
 
 app.use( async (ctx) => {
     // 当请求是get时，显示表单让用户填写
@@ -23,7 +20,7 @@ app.use( async (ctx) => {
         ctx.body = html
     }else if(ctx.url === '/' && ctx.method === 'POST'){
         // ctx.body = '接收到的请求'
-        let postData = ctx.request
+        let postData = await parsePostData(ctx)
         ctx.body = postData
     }else {
         ctx.body = `
@@ -32,6 +29,38 @@ app.use( async (ctx) => {
     }
 
 })
+
+// 处理post参数，合并为字符串
+function parsePostData(ctx) {
+    return new Promise((resolve, reject) => {
+        try{
+            let postData = ''
+            ctx.req.on('data', (data) => {
+                postData += data
+            })
+
+            ctx.req.addListener('end', function(){
+                let parseData = parseQueryStr(postData)
+                resolve(parseData)
+
+            })
+        }catch(err){
+            reject(err)
+        }
+    })
+}
+
+function parseQueryStr(queryStr) {
+    let queryData = {}
+    let queryStrList = queryStr.split('&')
+    console.log(queryStrList)
+    for(let [index, queryStr] of queryStrList.entries()) {
+        let itemList = queryStr.split('=')
+        console.log(itemList, 'item')
+        queryData[itemList[0]] = decodeURIComponent(itemList[1]);
+    }
+    return queryData
+}
 
 app.listen(8040)
 console.log('[demo] start quick is starting at port 8040')
