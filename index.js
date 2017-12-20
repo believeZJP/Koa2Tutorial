@@ -1,37 +1,50 @@
-
+const fs = require('fs')
 const Koa = require('koa')
 const app = new Koa()
-const bodyParser = require('koa-bodyparser')
-
-app.use(bodyParser())
 
 app.use( async (ctx) => {
-    // 当请求是get时，显示表单让用户填写
-    if(ctx.url === '/' && ctx.method === 'GET'){
-        let html = `
-            <h1>Koa2 request post demo</h1>
-            <form method="POST"  action="/">
-                <p>userName</p>
-                <input name="userName" /> <br/>
-                <p>age</p>
-                <input name="age" /> <br/>
-                <p>webSite</p>
-                <input name='webSite' /><br/>
-                <button type="submit">submit</button>
-            </form>
-        `
-        ctx.body = html
-    }else if(ctx.url === '/' && ctx.method === 'POST'){
-        // ctx.body = '接收到的请求'
-        let postData = ctx.request
-        ctx.body = postData
-    }else {
-        ctx.body = `
-            <h1>404</h1>
-        `
-    }
+    let url = ctx.request.url
+
+    ctx.body = await router(url)
 
 })
+
+async function router(url) {
+    let page = '404.html'
+    switch(url) {
+        case '/':
+            page = 'index.html'
+            break
+        case 'index':
+            page = 'index.html'
+            break
+        case 'todo':
+            page = 'todo.html'
+            break
+        case '404':
+            page = '404.html'
+            break
+        default:
+            break    
+    }
+    // 用异步来接收html，防止页面卡死
+    let html = await render(page)
+    return html
+}
+
+function render(page){
+    return new Promise((resolve, reject)=>{
+        let pageUrl = `./page/${page}`
+        fs.readFile(pageUrl, 'UTF-8', (err, data)=>{
+            if(err){
+                reject(err)
+            }else{
+                resolve(data)
+            }
+        })
+    })
+}
+
 
 app.listen(8040)
 console.log('[demo] start quick is starting at port 8040')
